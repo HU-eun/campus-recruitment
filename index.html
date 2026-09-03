@@ -81,6 +81,24 @@ td{padding:10px 12px;border-bottom:1px solid #f1f5f9}
 tr:hover td{background:#f8fafc}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .form-group{margin-bottom:14px}
+.filter-bar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:#fff;border-radius:12px;padding:12px 16px;box-shadow:0 1px 3px rgba(0,0,0,.08);margin-bottom:12px}
+.filter-bar .search-box{flex:1;min-width:200px}
+.filter-bar .search-box input{width:100%}
+.filter-dropdown{display:none;background:#fff;border-radius:12px;padding:16px 20px;box-shadow:0 4px 16px rgba(0,0,0,.12);margin-bottom:16px;border:1px solid #e2e8f0}
+.filter-dropdown.open{display:block}
+.filter-group{margin-bottom:16px}
+.filter-group:last-of-type{margin-bottom:8px}
+.filter-label{font-size:13px;font-weight:600;color:#1e293b;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.filter-label::before{content:'';width:4px;height:14px;background:var(--primary);border-radius:2px}
+.filter-tags{display:flex;flex-wrap:wrap;gap:6px}
+.filter-tag{padding:5px 12px;border-radius:16px;font-size:12px;cursor:pointer;border:1px solid #e2e8f0;background:#fff;transition:all .2s;user-select:none}
+.filter-tag:hover{border-color:var(--primary);color:var(--primary)}
+.filter-tag.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.filter-location-wrap{max-height:220px;overflow-y:auto;border:1px solid #eef2f7;border-radius:8px;padding:10px}
+.location-group-title{font-size:12px;font-weight:600;color:#64748b;margin:8px 0 6px;padding-bottom:4px;border-bottom:1px solid #f1f5f9}
+.filter-btn-active{background:#dbeafe;color:#1d4ed8;border-color:#93c5fd!important}
+.filter-count-badge{display:inline-block;background:#fff;color:var(--primary);border-radius:10px;padding:0 7px;font-size:11px;font-weight:700;margin-left:4px}
+.filter-clear-all{background:none;border:none;color:#dc2626;font-size:12px;cursor:pointer;text-decoration:underline;padding:0}
 @media(max-width:768px){
 .sidebar{transform:translateX(-100%)}
 .sidebar.show{transform:translateX(0)}
@@ -144,31 +162,45 @@ tr:hover td{background:#f8fafc}
 
 <div id="statsRow" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px"></div>
 
-<div style="display:grid;grid-template-columns:260px 1fr;gap:16px">
-<div>
-<div class="filter-panel">
-<div style="font-size:14px;font-weight:600;margin-bottom:12px">🔍 筛选条件</div>
-<div class="filter-group"><div class="filter-label">搜索</div><input type="text" id="searchInput" placeholder="搜索公司/岗位..." oninput="applyFilters()"></div>
-<div class="filter-group"><div class="filter-label">批次</div><div class="filter-tags" id="batchFilters"></div></div>
-<div class="filter-group"><div class="filter-label">工作地点</div><div class="filter-tags" id="locationFilters"></div></div>
-<div class="filter-group"><div class="filter-label">行业大类</div><div class="filter-tags" id="industryFilters"></div></div>
-<div class="filter-group"><div class="filter-label">企业性质</div><div class="filter-tags" id="natureFilters"></div></div>
-<div class="filter-group"><div class="filter-label">是否需要笔试</div><div class="filter-tags" id="examFilters"></div></div>
-<button class="btn btn-secondary btn-sm" style="width:100%" onclick="resetFilters()">重置筛选</button>
+<div class="filter-bar">
+<div class="search-box"><input type="text" id="searchInput" placeholder="搜索公司 / 岗位 / 地点..." oninput="applyFilters()"></div>
+<button class="btn btn-primary" style="white-space:nowrap" onclick="toggleFilterPanel()">🔍 筛选<span class="filter-count-badge" id="filterCount">0</span> ▾</button>
+<select id="sortSelect" style="width:auto" onchange="applyFilters()"><option value="default">默认排序</option><option value="date_desc">更新时间↓</option><option value="date_asc">更新时间↑</option><option value="deadline">截止时间↑</option></select>
+</div>
+
+<div class="filter-dropdown" id="filterDropdown">
+<div class="filter-group">
+<div class="filter-label">批次</div>
+<div class="filter-tags" id="batchFilters"></div>
+</div>
+<div class="filter-group">
+<div class="filter-label">工作地点</div>
+<div class="search-box" style="margin-bottom:8px"><input type="text" id="locationSearch" placeholder="搜索城市..." oninput="renderLocationFilters()"></div>
+<div class="filter-location-wrap" id="locationFilters"></div>
+</div>
+<div class="filter-group">
+<div class="filter-label">行业类别</div>
+<div class="filter-tags" id="industryFilters"></div>
+</div>
+<div class="filter-group">
+<div class="filter-label">企业性质</div>
+<div class="filter-tags" id="natureFilters"></div>
+</div>
+<div class="filter-group">
+<div class="filter-label">是否需要笔试</div>
+<div class="filter-tags" id="examFilters"></div>
+</div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid #f1f5f9">
+<span style="font-size:12px;color:#64748b" id="activeFilterSummary">未选择筛选条件</span>
+<button class="btn btn-secondary btn-sm" onclick="resetFilters()">重置筛选</button>
 </div>
 </div>
-<div>
+
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
 <div style="font-size:14px;color:#64748b">共 <span id="resultCount" style="font-weight:600;color:var(--primary)">0</span> 条岗位</div>
-<div style="display:flex;gap:8px;align-items:center">
-<label style="margin:0;font-size:13px">排序:</label>
-<select id="sortSelect" style="width:auto" onchange="applyFilters()"><option value="default">默认</option><option value="date_desc">更新时间↓</option><option value="date_asc">更新时间↑</option><option value="deadline">截止时间↑</option></select>
-</div>
 </div>
 <div id="jobList"></div>
 <div class="pagination" id="pagination"></div>
-</div>
-</div>
 </div>
 
 <!-- 岗位详情页 -->
