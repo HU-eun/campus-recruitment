@@ -34,6 +34,8 @@ let filteredJobs = [];
 
 let activeFilters = { batch: [], location: [], industry: [], nature: [], exam: [] };
 
+let filterOptions = { batch: [], industry: [], nature: [], exam: [] };
+
 
 
 // ========== 工具函数 ==========
@@ -312,29 +314,19 @@ function initFilters() {
 
   const jobs = window.jobsData || [];
 
-  const batches = [...new Set(jobs.flatMap(j => j.批次 || []))];
+  filterOptions.batch = [...new Set(jobs.flatMap(j => j.批次 || []))].sort();
 
-  const industries = [...new Set(jobs.flatMap(j => j.行业大类 || []))];
+  filterOptions.industry = [...new Set(jobs.flatMap(j => j.行业大类 || []))].sort();
 
-  const natures = [...new Set(jobs.flatMap(j => j.企业性质 || []))];
+  filterOptions.nature = [...new Set(jobs.flatMap(j => j.企业性质 || []))].sort();
 
-  const exams = [...new Set(jobs.flatMap(j => j.是否需要笔试 || []))];
-
-
+  filterOptions.exam = [...new Set(jobs.flatMap(j => j.是否需要笔试 || []))].sort();
 
   allLocations = sortByPinyin(extractLocations());
 
-
-
-  renderFilterTags('batchFilters', batches, 'batch');
+  ['batch', 'industry', 'nature', 'exam'].forEach(key => renderSearchableOptions(key));
 
   renderLocationFilters();
-
-  renderFilterTags('industryFilters', industries, 'industry');
-
-  renderFilterTags('natureFilters', natures, 'nature');
-
-  renderFilterTags('examFilters', exams, 'exam');
 
   updateFilterUI();
 
@@ -412,6 +404,134 @@ function renderLocationFilters() {
 
 
 
+// ========== 可搜索多选下拉 ==========
+
+function toggleSearchableSelect(key) {
+
+  const dropdown = document.getElementById(key + 'Dropdown');
+
+  const trigger = document.getElementById(key + 'Trigger');
+
+  const isOpen = dropdown.classList.contains('open');
+
+  closeAllSearchableSelects();
+
+  if (!isOpen) {
+
+    dropdown.classList.add('open');
+
+    trigger.classList.add('open');
+
+    const searchInput = document.getElementById(key + 'Search');
+
+    if (searchInput) setTimeout(() => searchInput.focus(), 50);
+
+  }
+
+}
+
+
+
+function closeAllSearchableSelects() {
+
+  document.querySelectorAll('.select-dropdown.open').forEach(d => d.classList.remove('open'));
+
+  document.querySelectorAll('.select-trigger.open').forEach(t => t.classList.remove('open'));
+
+}
+
+
+
+function renderSearchableOptions(key) {
+
+  const container = document.getElementById(key + 'Options');
+
+  if (!container) return;
+
+  const searchEl = document.getElementById(key + 'Search');
+
+  const keyword = searchEl ? (searchEl.value || '').trim().toLowerCase() : '';
+
+  const items = filterOptions[key] || [];
+
+  const filtered = keyword ? items.filter(item => String(item).toLowerCase().includes(keyword)) : items;
+
+  if (filtered.length === 0) {
+
+    container.innerHTML = '<div style="font-size:12px;color:#94a3b8;padding:12px;text-align:center">未找到匹配项</div>';
+
+    return;
+
+  }
+
+  container.innerHTML = filtered.map(item => {
+
+    const checked = activeFilters[key].includes(item);
+
+    const escaped = String(item).replace(/'/g, "\\'");
+
+    return '<label class="select-option' + (checked ? ' checked' : '') + '" onclick="event.preventDefault();toggleSearchableOption(\'' + key + '\',\'' + escaped + '\')">' +
+
+      '<input type="checkbox" ' + (checked ? 'checked' : '') + ' onclick="event.stopPropagation();toggleSearchableOption(\'' + key + '\',\'' + escaped + '\')">' +
+
+      '<span>' + item + '</span></label>';
+
+  }).join('');
+
+}
+
+
+
+function toggleSearchableOption(key, value) {
+
+  const idx = activeFilters[key].indexOf(value);
+
+  if (idx >= 0) activeFilters[key].splice(idx, 1);
+
+  else activeFilters[key].push(value);
+
+  renderSearchableOptions(key);
+
+  updateSearchableSelectText(key);
+
+  updateFilterUI();
+
+  currentPage = 1;
+
+  applyFilters();
+
+}
+
+
+
+function updateSearchableSelectText(key) {
+
+  const textEl = document.getElementById(key + 'SelectText');
+
+  if (!textEl) return;
+
+  const selected = activeFilters[key];
+
+  if (selected.length === 0) textEl.textContent = '全部';
+
+  else if (selected.length === 1) textEl.textContent = selected[0];
+
+  else textEl.textContent = '已选 ' + selected.length + ' 项';
+
+}
+
+
+
+// 点击外部关闭下拉
+
+document.addEventListener('click', function(e) {
+
+  if (!e.target.closest('.searchable-select')) closeAllSearchableSelects();
+
+});
+
+
+
 function toggleFilterPanel() {
 
   document.getElementById('filterDropdown').classList.toggle('open');
@@ -452,11 +572,7 @@ function updateFilterUI() {
 
   const totalCount = Object.values(activeFilters).reduce((sum, arr) => sum + arr.length, 0);
 
-  const badge = document.getElementById('filterCount');
-
-  badge.textContent = totalCount;
-
-  badge.style.display = totalCount > 0 ? 'inline-block' : 'none';
+  // filterCount badge 已移至左侧面板，此处不再更新
 
 
 
@@ -472,9 +588,7 @@ function updateFilterUI() {
 
   if (activeFilters.exam.length) summary.push(`笔试${activeFilters.exam.length}项`);
 
-  const el = document.getElementById('activeFilterSummary');
-
-  if (el) el.textContent = summary.length > 0 ? '已选：' + summary.join('、') : '未选择筛选条件';
+  // 筛选摘要已移至左侧面板，此处仅更新计数
 
 }
 
@@ -486,11 +600,25 @@ function resetFilters() {
 
   document.getElementById('searchInput').value = '';
 
-  const locSearch = document.getElementById('locationSearch');
+  ['locationSearch', 'batchSearch', 'industrySearch', 'natureSearch', 'examSearch'].forEach(id => {
 
-  if (locSearch) locSearch.value = '';
+    const el = document.getElementById(id);
 
-  document.querySelectorAll('.filter-tag').forEach(t => t.classList.remove('active'));
+    if (el) el.value = '';
+
+  });
+
+  ['batch', 'industry', 'nature', 'exam'].forEach(key => {
+
+    updateSearchableSelectText(key);
+
+    renderSearchableOptions(key);
+
+  });
+
+  renderLocationFilters();
+
+  closeAllSearchableSelects();
 
   currentPage = 1;
 

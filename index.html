@@ -107,6 +107,40 @@ tr:hover td{background:#f8fafc}
 .form-row{grid-template-columns:1fr}
 .search-box input{width:200px}
 }
+
+.home-layout{display:flex;gap:16px;align-items:flex-start}
+.filter-sidebar{width:260px;flex-shrink:0;position:sticky;top:72px;max-height:calc(100vh - 90px);overflow-y:auto;background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+.filter-sidebar::-webkit-scrollbar{width:4px}
+.filter-sidebar::-webkit-scrollbar-thumb{background:#cbd5e1;border-radius:2px}
+.home-main{flex:1;min-width:0}
+.filter-section{margin-bottom:16px}
+.filter-section:last-of-type{margin-bottom:12px}
+.filter-sidebar .filter-label{font-size:13px;font-weight:600;color:#1e293b;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.filter-sidebar .filter-label::before{content:'';width:4px;height:14px;background:var(--primary);border-radius:2px}
+.searchable-select{position:relative}
+.select-trigger{width:100%;display:flex;justify-content:space-between;align-items:center;padding:8px 12px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;cursor:pointer;font-size:14px;color:#334155;transition:border-color .2s}
+.select-trigger:hover{border-color:var(--primary)}
+.select-trigger.open{border-color:var(--primary);box-shadow:0 0 0 3px rgba(37,99,235,.1)}
+.select-text{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;text-align:left}
+.select-arrow{font-size:10px;color:#94a3b8;margin-left:8px;transition:transform .2s}
+.select-trigger.open .select-arrow{transform:rotate(180deg)}
+.select-dropdown{display:none;position:absolute;top:calc(100% + 4px);left:0;right:0;z-index:60;background:#fff;border:1px solid #e2e8f0;border-radius:8px;box-shadow:0 4px 16px rgba(0,0,0,.12);overflow:hidden}
+.select-dropdown.open{display:block}
+.select-search{padding:8px;border-bottom:1px solid #f1f5f9}
+.select-search input{padding:6px 10px;font-size:13px}
+.select-options{max-height:220px;overflow-y:auto;padding:4px}
+.select-option{display:flex;align-items:center;gap:8px;padding:7px 10px;border-radius:6px;cursor:pointer;font-size:13px;color:#334155;transition:background .15s}
+.select-option:hover{background:#f1f5f9}
+.select-option input[type="checkbox"]{width:16px;height:16px;accent-color:var(--primary);cursor:pointer;flex-shrink:0}
+.select-option.checked{background:#eff6ff;color:#1d4ed8;font-weight:500}
+.filter-sidebar .filter-location-wrap{max-height:240px}
+.filter-sidebar .search-box input{width:100%;padding-left:36px}
+.filter-sidebar .search-box::before{left:10px}
+.filter-sidebar select{padding:8px 12px;font-size:14px}
+@media(max-width:900px){
+.home-layout{flex-direction:column}
+.filter-sidebar{width:100%;position:static;max-height:none}
+}
 </style>
 </head>
 <body>
@@ -160,47 +194,71 @@ tr:hover td{background:#f8fafc}
 </div>
 </div>
 
-<div id="statsRow" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px"></div>
-
-<div class="filter-bar">
-<div class="search-box"><input type="text" id="searchInput" placeholder="搜索公司 / 岗位 / 地点..." oninput="applyFilters()"></div>
-<button class="btn btn-primary" style="white-space:nowrap" onclick="toggleFilterPanel()">🔍 筛选<span class="filter-count-badge" id="filterCount">0</span> ▾</button>
-<select id="sortSelect" style="width:auto" onchange="applyFilters()"><option value="default">默认排序</option><option value="date_desc">更新时间↓</option><option value="date_asc">更新时间↑</option><option value="deadline">截止时间↑</option></select>
+<div class="home-layout">
+<div class="filter-sidebar">
+<div class="filter-section">
+<div class="filter-label">搜索</div>
+<div class="search-box"><input type="text" id="searchInput" placeholder="公司 / 岗位 / 地点关键词" oninput="applyFilters()"></div>
 </div>
-
-<div class="filter-dropdown" id="filterDropdown">
-<div class="filter-group">
+<div class="filter-section">
 <div class="filter-label">批次</div>
-<div class="filter-tags" id="batchFilters"></div>
+<div class="searchable-select" data-key="batch">
+<button class="select-trigger" id="batchTrigger" onclick="toggleSearchableSelect('batch')"><span class="select-text" id="batchSelectText">全部</span><span class="select-arrow">▾</span></button>
+<div class="select-dropdown" id="batchDropdown">
+<div class="select-search"><input type="text" id="batchSearch" placeholder="搜索批次..." oninput="renderSearchableOptions('batch')"></div>
+<div class="select-options" id="batchOptions"></div>
 </div>
-<div class="filter-group">
+</div>
+</div>
+<div class="filter-section">
 <div class="filter-label">工作地点</div>
 <div class="search-box" style="margin-bottom:8px"><input type="text" id="locationSearch" placeholder="搜索城市..." oninput="renderLocationFilters()"></div>
 <div class="filter-location-wrap" id="locationFilters"></div>
 </div>
-<div class="filter-group">
+<div class="filter-section">
 <div class="filter-label">行业类别</div>
-<div class="filter-tags" id="industryFilters"></div>
+<div class="searchable-select" data-key="industry">
+<button class="select-trigger" id="industryTrigger" onclick="toggleSearchableSelect('industry')"><span class="select-text" id="industrySelectText">全部</span><span class="select-arrow">▾</span></button>
+<div class="select-dropdown" id="industryDropdown">
+<div class="select-search"><input type="text" id="industrySearch" placeholder="搜索行业..." oninput="renderSearchableOptions('industry')"></div>
+<div class="select-options" id="industryOptions"></div>
 </div>
-<div class="filter-group">
+</div>
+</div>
+<div class="filter-section">
 <div class="filter-label">企业性质</div>
-<div class="filter-tags" id="natureFilters"></div>
+<div class="searchable-select" data-key="nature">
+<button class="select-trigger" id="natureTrigger" onclick="toggleSearchableSelect('nature')"><span class="select-text" id="natureSelectText">全部</span><span class="select-arrow">▾</span></button>
+<div class="select-dropdown" id="natureDropdown">
+<div class="select-search"><input type="text" id="natureSearch" placeholder="搜索企业性质..." oninput="renderSearchableOptions('nature')"></div>
+<div class="select-options" id="natureOptions"></div>
 </div>
-<div class="filter-group">
+</div>
+</div>
+<div class="filter-section">
 <div class="filter-label">是否需要笔试</div>
-<div class="filter-tags" id="examFilters"></div>
+<div class="searchable-select" data-key="exam">
+<button class="select-trigger" id="examTrigger" onclick="toggleSearchableSelect('exam')"><span class="select-text" id="examSelectText">全部</span><span class="select-arrow">▾</span></button>
+<div class="select-dropdown" id="examDropdown">
+<div class="select-search"><input type="text" id="examSearch" placeholder="搜索..." oninput="renderSearchableOptions('exam')"></div>
+<div class="select-options" id="examOptions"></div>
 </div>
-<div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px;padding-top:12px;border-top:1px solid #f1f5f9">
-<span style="font-size:12px;color:#64748b" id="activeFilterSummary">未选择筛选条件</span>
-<button class="btn btn-secondary btn-sm" onclick="resetFilters()">重置筛选</button>
 </div>
 </div>
-
+<div class="filter-section">
+<div class="filter-label">排序方式</div>
+<select id="sortSelect" onchange="applyFilters()"><option value="default">默认排序</option><option value="date_desc">更新时间最新</option><option value="date_asc">更新时间最早</option><option value="deadline">截止时间最近</option></select>
+</div>
+<button class="btn btn-secondary" style="width:100%" onclick="resetFilters()">🔄 重置筛选</button>
+</div>
+<div class="home-main">
+<div id="statsRow" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px"></div>
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
 <div style="font-size:14px;color:#64748b">共 <span id="resultCount" style="font-weight:600;color:var(--primary)">0</span> 条岗位</div>
 </div>
 <div id="jobList"></div>
 <div class="pagination" id="pagination"></div>
+</div>
 </div>
 
 <!-- 岗位详情页 -->
