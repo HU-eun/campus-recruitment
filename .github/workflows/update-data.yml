@@ -1,8 +1,8 @@
-name: 每日自动更新校招数据
+name: 每周二四六自动更新校招数据
 
 on:
   schedule:
-    - cron: '0 2 * * *'  # 每天北京时间10点（UTC 2点）自动运行
+    - cron: '0 2 * * 2,4,6'  # 每周二、四、六北京时间10点（UTC 2点）自动运行
   workflow_dispatch:  # 允许手动触发
 
 permissions:
