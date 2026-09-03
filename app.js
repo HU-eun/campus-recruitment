@@ -1,3 +1,58 @@
+
+// ========== 加载检测与错误处理 ==========
+window.addEventListener('error', function(e) {
+  var errDiv = document.getElementById('loadingError');
+  if (errDiv) {
+    errDiv.style.display = 'block';
+    errDiv.innerHTML = '<strong>加载出错：</strong><br>' + (e.message || '未知错误') + '<br><br>请尝试：<br>1. 按 Ctrl+F5 强制刷新<br>2. 换 Chrome 或 Edge 浏览器打开<br>3. 检查网络连接';
+  }
+  console.error('全局错误:', e.message, e.filename, e.lineno);
+});
+
+var loadStartTime = Date.now();
+var loadCheckInterval = setInterval(function() {
+  var elapsed = (Date.now() - loadStartTime) / 1000;
+  var statusEl = document.getElementById('loadingStatus');
+  if (statusEl) {
+    if (elapsed < 5) {
+      statusEl.textContent = '正在加载岗位数据（约3.5MB），已等待 ' + elapsed.toFixed(0) + ' 秒...';
+    } else if (elapsed < 15) {
+      statusEl.textContent = '数据较大，加载中... 已等待 ' + elapsed.toFixed(0) + ' 秒，网络较慢请耐心等待';
+    } else if (elapsed < 30) {
+      statusEl.textContent = '加载时间较长，可能是网络问题... 已等待 ' + elapsed.toFixed(0) + ' 秒';
+    } else {
+      clearInterval(loadCheckInterval);
+      var errDiv = document.getElementById('loadingError');
+      if (errDiv) {
+        errDiv.style.display = 'block';
+        errDiv.innerHTML = '<strong>加载超时（超过30秒）</strong><br><br>可能原因：<br>1. 网络连接太慢<br>2. GitHub Pages 在日本访问不稳定<br>3. 浏览器缓存问题<br><br>解决方案：<br>1. 按 Ctrl+F5 强制刷新<br>2. 换 Chrome 或 Edge 浏览器<br>3. 尝试使用手机热点<br>4. 稍后再试';
+      }
+      if (statusEl) statusEl.textContent = '加载超时';
+    }
+  }
+}, 1000);
+
+function hideLoading() {
+  clearInterval(loadCheckInterval);
+  var overlay = document.getElementById('loadingOverlay');
+  if (overlay) {
+    overlay.style.transition = 'opacity 0.5s';
+    overlay.style.opacity = '0';
+    setTimeout(function() { overlay.style.display = 'none'; }, 500);
+  }
+}
+
+function showLoadingError(msg) {
+  clearInterval(loadCheckInterval);
+  var errDiv = document.getElementById('loadingError');
+  if (errDiv) {
+    errDiv.style.display = 'block';
+    errDiv.innerHTML = msg;
+  }
+  var statusEl = document.getElementById('loadingStatus');
+  if (statusEl) statusEl.textContent = '加载失败';
+}
+
 // ========== 数据存储 ==========
 const DB = {
   get(key, def) { try { return JSON.parse(localStorage.getItem('campus_' + key)) || def; } catch(e) { return def; } },
@@ -1235,10 +1290,16 @@ document.getElementById('todayBadge').textContent = getCurrentStage();
 
 function initApp() {
   if (window.jobsData) {
+    hideLoading();
     initFilters();
     renderHome();
   } else {
-    setTimeout(initApp, 100);
+    var elapsed = (Date.now() - loadStartTime) / 1000;
+    if (elapsed > 45) {
+      showLoadingError('<strong>数据加载失败</strong><br><br>岗位数据文件（all-data.js，约3.5MB）未能加载。<br><br>请尝试：<br>1. 按 Ctrl+F5 强制刷新页面<br>2. 换 Chrome 或 Edge 浏览器打开<br>3. 检查网络连接，尝试切换网络<br>4. 稍后再试（GitHub Pages 可能临时不稳定）');
+      return;
+    }
+    setTimeout(initApp, 200);
   }
 }
 initApp();
