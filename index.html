@@ -141,6 +141,16 @@ tr:hover td{background:#f8fafc}
 .home-layout{flex-direction:column}
 .filter-sidebar{width:100%;position:static;max-height:none}
 }
+
+.resume-version-tab{padding:6px 14px;border-radius:16px;font-size:13px;cursor:pointer;border:1px solid #e2e8f0;background:#fff;transition:all .2s;user-select:none}
+.resume-version-tab:hover{border-color:var(--primary);color:var(--primary)}
+.resume-version-tab.active{background:var(--primary);color:#fff;border-color:var(--primary)}
+.check-score-circle{width:100px;height:100px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;font-weight:700;color:#fff;margin:0 auto}
+.check-keyword-tag{display:inline-block;padding:3px 10px;border-radius:12px;font-size:12px;margin:2px}
+.check-keyword-hit{background:#dcfce7;color:#16a34a}
+.check-keyword-miss{background:#fee2e2;color:#dc2626}
+.check-suggestion-item{padding:8px 12px;background:#f8fafc;border-radius:8px;margin-bottom:6px;font-size:13px;color:#334155;border-left:3px solid var(--primary)}
+.check-interview-q{padding:8px 12px;background:#fef3c7;border-radius:8px;margin-bottom:6px;font-size:13px;color:#92400e}
 </style>
 </head>
 <body>
@@ -286,13 +296,39 @@ tr:hover td{background:#f8fafc}
 
 <!-- 我的简历页 -->
 <div class="page" id="page-resume">
-<div class="card">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
+<div class="card" style="margin-bottom:16px">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
 <h3 style="font-size:16px;font-weight:600;margin:0">📄 我的简历</h3>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<button class="btn btn-secondary btn-sm" onclick="addResumeVersion()">➕ 新版本</button>
+<button class="btn btn-secondary btn-sm" onclick="renameResumeVersion()">✏️ 重命名</button>
+<button class="btn btn-secondary btn-sm" onclick="deleteResumeVersion()">🗑️ 删除</button>
 <button class="btn btn-primary btn-sm" onclick="copyResumeAll()">📋 复制全部</button>
 </div>
-<div id="resumeSections"></div>
 </div>
+<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="resumeVersionTabs"></div>
+<div style="font-size:12px;color:#64748b;margin-bottom:8px">💡 提示：不同岗位可以准备不同版本的简历，点击版本标签切换</div>
+</div>
+
+<div class="card" style="margin-bottom:16px">
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;cursor:pointer" onclick="toggleResumeCheck()">
+<h3 style="font-size:16px;font-weight:600;margin:0">🔍 简历体检 <span style="font-size:12px;color:#64748b;font-weight:400">粘贴岗位JD，分析匹配度并生成优化建议</span></h3>
+<span id="resumeCheckArrow" style="font-size:14px;color:#64748b">▼</span>
+</div>
+<div id="resumeCheckPanel" style="display:none">
+<div style="margin-bottom:12px">
+<label style="font-size:13px;font-weight:500;color:#334155;margin-bottom:4px;display:block">📋 粘贴目标岗位JD（职位描述）</label>
+<textarea id="jdInput" rows="6" style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;resize:vertical;font-family:inherit" placeholder="粘贴岗位要求、职责描述等内容，越详细匹配越准确..."></textarea>
+</div>
+<div style="display:flex;gap:8px;margin-bottom:12px">
+<button class="btn btn-primary btn-sm" onclick="runResumeCheck()">🔬 开始体检</button>
+<button class="btn btn-secondary btn-sm" onclick="clearResumeCheck()">🗑️ 清空</button>
+</div>
+<div id="resumeCheckResult"></div>
+</div>
+</div>
+
+<div id="resumeSections"></div>
 </div>
 
 <!-- 目标公司页 -->
