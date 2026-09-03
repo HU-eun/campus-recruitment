@@ -1,0 +1,37 @@
+name: 每日自动更新校招数据
+
+on:
+  schedule:
+    - cron: '0 2 * * *'  # 每天北京时间10点（UTC 2点）自动运行
+  workflow_dispatch:  # 允许手动触发
+
+jobs:
+  update-data:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 安装依赖
+        run: |
+          pip install requests
+
+      - name: 运行数据导出脚本
+        env:
+          LARK_APP_ID: ${{ secrets.LARK_APP_ID }}
+          LARK_APP_SECRET: ${{ secrets.LARK_APP_SECRET }}
+          BASE_TOKEN: ${{ secrets.BASE_TOKEN }}
+        run: |
+          python export_data.py
+
+      - name: 提交并推送更新
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add data/
+          git diff --staged --quiet || (git commit -m "自动更新校招数据 $(date +'%Y-%m-%d')" && git push)
