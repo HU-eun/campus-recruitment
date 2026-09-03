@@ -107,7 +107,6 @@ tr:hover td{background:#f8fafc}
 .form-row{grid-template-columns:1fr}
 .search-box input{width:200px}
 }
-
 .home-layout{display:flex;gap:16px;align-items:flex-start}
 .filter-sidebar{width:260px;flex-shrink:0;position:sticky;top:72px;max-height:calc(100vh - 90px);overflow-y:auto;background:#fff;border-radius:12px;padding:16px;box-shadow:0 1px 3px rgba(0,0,0,.08)}
 .filter-sidebar::-webkit-scrollbar{width:4px}
@@ -141,7 +140,6 @@ tr:hover td{background:#f8fafc}
 .home-layout{flex-direction:column}
 .filter-sidebar{width:100%;position:static;max-height:none}
 }
-
 .resume-version-tab{padding:6px 14px;border-radius:16px;font-size:13px;cursor:pointer;border:1px solid #e2e8f0;background:#fff;transition:all .2s;user-select:none}
 .resume-version-tab:hover{border-color:var(--primary);color:var(--primary)}
 .resume-version-tab.active{background:var(--primary);color:#fff;border-color:var(--primary)}
@@ -154,6 +152,17 @@ tr:hover td{background:#f8fafc}
 </style>
 </head>
 <body>
+<!-- 加载提示 -->
+<div id="loadingOverlay" style="position:fixed;top:0;left:0;right:0;bottom:0;background:#f8fafc;z-index:9999;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:inherit">
+  <div style="font-size:48px;margin-bottom:16px">&#128202;</div>
+  <div style="font-size:18px;font-weight:600;color:#1e293b;margin-bottom:8px">正在加载校招数据...</div>
+  <div style="font-size:13px;color:#64748b;margin-bottom:16px" id="loadingStatus">正在加载岗位数据（约3.5MB），请稍候...</div>
+  <div style="width:200px;height:4px;background:#e2e8f0;border-radius:2px;overflow:hidden">
+    <div id="loadingBar" style="height:100%;width:30%;background:#2563eb;border-radius:2px;animation:pulse 1.5s infinite"></div>
+  </div>
+  <div id="loadingError" style="display:none;margin-top:20px;padding:16px;background:#fee2e2;border-radius:8px;color:#dc2626;font-size:13px;max-width:400px;text-align:center"></div>
+</div>
+<style>@keyframes pulse{0%{width:10%}50%{width:70%}100%{width:10%}}</style>
 
 <nav class="sidebar" id="sidebar">
 <div style="padding:16px 20px;border-bottom:1px solid #334155">
@@ -188,7 +197,6 @@ tr:hover td{background:#f8fafc}
 <div><span class="badge badge-blue" id="todayBadge"></span></div>
 </div>
 
-<!-- 校招广场首页 -->
 <div class="page active" id="page-home">
 <div class="card" style="background:linear-gradient(135deg,#2563eb,#1e40af);color:#fff">
 <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px">
@@ -206,319 +214,49 @@ tr:hover td{background:#f8fafc}
 
 <div class="home-layout">
 <div class="filter-sidebar">
-<div class="filter-section">
-<div class="filter-label">搜索</div>
-<div class="search-box"><input type="text" id="searchInput" placeholder="公司 / 岗位 / 地点关键词" oninput="applyFilters()"></div>
-</div>
-<div class="filter-section">
-<div class="filter-label">批次</div>
-<div class="searchable-select" data-key="batch">
-<button class="select-trigger" id="batchTrigger" onclick="toggleSearchableSelect('batch')"><span class="select-text" id="batchSelectText">全部</span><span class="select-arrow">▾</span></button>
-<div class="select-dropdown" id="batchDropdown">
-<div class="select-search"><input type="text" id="batchSearch" placeholder="搜索批次..." oninput="renderSearchableOptions('batch')"></div>
-<div class="select-options" id="batchOptions"></div>
-</div>
-</div>
-</div>
-<div class="filter-section">
-<div class="filter-label">工作地点</div>
-<div class="search-box" style="margin-bottom:8px"><input type="text" id="locationSearch" placeholder="搜索城市..." oninput="renderLocationFilters()"></div>
-<div class="filter-location-wrap" id="locationFilters"></div>
-</div>
-<div class="filter-section">
-<div class="filter-label">行业类别</div>
-<div class="searchable-select" data-key="industry">
-<button class="select-trigger" id="industryTrigger" onclick="toggleSearchableSelect('industry')"><span class="select-text" id="industrySelectText">全部</span><span class="select-arrow">▾</span></button>
-<div class="select-dropdown" id="industryDropdown">
-<div class="select-search"><input type="text" id="industrySearch" placeholder="搜索行业..." oninput="renderSearchableOptions('industry')"></div>
-<div class="select-options" id="industryOptions"></div>
-</div>
-</div>
-</div>
-<div class="filter-section">
-<div class="filter-label">企业性质</div>
-<div class="searchable-select" data-key="nature">
-<button class="select-trigger" id="natureTrigger" onclick="toggleSearchableSelect('nature')"><span class="select-text" id="natureSelectText">全部</span><span class="select-arrow">▾</span></button>
-<div class="select-dropdown" id="natureDropdown">
-<div class="select-search"><input type="text" id="natureSearch" placeholder="搜索企业性质..." oninput="renderSearchableOptions('nature')"></div>
-<div class="select-options" id="natureOptions"></div>
-</div>
-</div>
-</div>
-<div class="filter-section">
-<div class="filter-label">是否需要笔试</div>
-<div class="searchable-select" data-key="exam">
-<button class="select-trigger" id="examTrigger" onclick="toggleSearchableSelect('exam')"><span class="select-text" id="examSelectText">全部</span><span class="select-arrow">▾</span></button>
-<div class="select-dropdown" id="examDropdown">
-<div class="select-search"><input type="text" id="examSearch" placeholder="搜索..." oninput="renderSearchableOptions('exam')"></div>
-<div class="select-options" id="examOptions"></div>
-</div>
-</div>
-</div>
-<div class="filter-section">
-<div class="filter-label">排序方式</div>
-<select id="sortSelect" onchange="applyFilters()"><option value="default">默认排序</option><option value="date_desc">更新时间最新</option><option value="date_asc">更新时间最早</option><option value="deadline">截止时间最近</option></select>
-</div>
+<div class="filter-section"><div class="filter-label">搜索</div><div class="search-box"><input type="text" id="searchInput" placeholder="公司 / 岗位 / 地点关键词" oninput="applyFilters()"></div></div>
+<div class="filter-section"><div class="filter-label">批次</div><div class="searchable-select" data-key="batch"><button class="select-trigger" id="batchTrigger" onclick="toggleSearchableSelect('batch')"><span class="select-text" id="batchSelectText">全部</span><span class="select-arrow">▾</span></button><div class="select-dropdown" id="batchDropdown"><div class="select-search"><input type="text" id="batchSearch" placeholder="搜索批次..." oninput="renderSearchableOptions('batch')"></div><div class="select-options" id="batchOptions"></div></div></div></div>
+<div class="filter-section"><div class="filter-label">工作地点</div><div class="search-box" style="margin-bottom:8px"><input type="text" id="locationSearch" placeholder="搜索城市..." oninput="renderLocationFilters()"></div><div class="filter-location-wrap" id="locationFilters"></div></div>
+<div class="filter-section"><div class="filter-label">行业类别</div><div class="searchable-select" data-key="industry"><button class="select-trigger" id="industryTrigger" onclick="toggleSearchableSelect('industry')"><span class="select-text" id="industrySelectText">全部</span><span class="select-arrow">▾</span></button><div class="select-dropdown" id="industryDropdown"><div class="select-search"><input type="text" id="industrySearch" placeholder="搜索行业..." oninput="renderSearchableOptions('industry')"></div><div class="select-options" id="industryOptions"></div></div></div></div>
+<div class="filter-section"><div class="filter-label">企业性质</div><div class="searchable-select" data-key="nature"><button class="select-trigger" id="natureTrigger" onclick="toggleSearchableSelect('nature')"><span class="select-text" id="natureSelectText">全部</span><span class="select-arrow">▾</span></button><div class="select-dropdown" id="natureDropdown"><div class="select-search"><input type="text" id="natureSearch" placeholder="搜索企业性质..." oninput="renderSearchableOptions('nature')"></div><div class="select-options" id="natureOptions"></div></div></div></div>
+<div class="filter-section"><div class="filter-label">是否需要笔试</div><div class="searchable-select" data-key="exam"><button class="select-trigger" id="examTrigger" onclick="toggleSearchableSelect('exam')"><span class="select-text" id="examSelectText">全部</span><span class="select-arrow">▾</span></button><div class="select-dropdown" id="examDropdown"><div class="select-search"><input type="text" id="examSearch" placeholder="搜索..." oninput="renderSearchableOptions('exam')"></div><div class="select-options" id="examOptions"></div></div></div></div>
+<div class="filter-section"><div class="filter-label">排序方式</div><select id="sortSelect" onchange="applyFilters()"><option value="default">默认排序</option><option value="date_desc">更新时间最新</option><option value="date_asc">更新时间最早</option><option value="deadline">截止时间最近</option></select></div>
 <button class="btn btn-secondary" style="width:100%" onclick="resetFilters()">🔄 重置筛选</button>
 </div>
 <div class="home-main">
 <div id="statsRow" style="display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:10px;margin-bottom:16px"></div>
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px">
-<div style="font-size:14px;color:#64748b">共 <span id="resultCount" style="font-weight:600;color:var(--primary)">0</span> 条岗位</div>
-</div>
+<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px"><div style="font-size:14px;color:#64748b">共 <span id="resultCount" style="font-weight:600;color:var(--primary)">0</span> 条岗位</div></div>
 <div id="jobList"></div>
 <div class="pagination" id="pagination"></div>
 </div>
 </div>
-
-<!-- 岗位详情页 -->
-<div class="page" id="page-detail">
-<button class="btn btn-secondary btn-sm" onclick="navigateTo('home')" style="margin-bottom:12px">← 返回列表</button>
-<div id="jobDetail"></div>
 </div>
 
-<!-- 平台导航页 -->
-<div class="page" id="page-platforms">
-<div class="card"><div style="font-size:16px;font-weight:600;margin-bottom:8px">🔗 招聘平台导航</div><div style="font-size:13px;color:#64748b">汇总官方与综合招聘渠道入口，点击卡片跳转对应平台官网</div></div>
-<div id="platformList"></div>
-</div>
+<div class="page" id="page-detail"><button class="btn btn-secondary btn-sm" onclick="navigateTo('home')" style="margin-bottom:12px">← 返回列表</button><div id="jobDetail"></div></div>
+<div class="page" id="page-platforms"><div class="card"><div style="font-size:16px;font-weight:600;margin-bottom:8px">🔗 招聘平台导航</div><div style="font-size:13px;color:#64748b">汇总官方与综合招聘渠道入口，点击卡片跳转对应平台官网</div></div><div id="platformList"></div></div>
+<div class="page" id="page-majors"><div class="card"><div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap"><div class="search-box" style="flex:1;min-width:200px"><input type="text" id="majorSearch" placeholder="搜索专业..." oninput="renderMajors()"></div></div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="majorCategoryTabs"></div><div id="majorList"></div></div></div>
 
-<!-- 专业参考页 -->
-<div class="page" id="page-majors">
-<div class="card">
-<div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-<div class="search-box" style="flex:1;min-width:200px"><input type="text" id="majorSearch" placeholder="搜索专业..." oninput="renderMajors()"></div>
-</div>
-<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="majorCategoryTabs"></div>
-<div id="majorList"></div>
-</div>
-</div>
-
-<!-- 我的简历页 -->
 <div class="page" id="page-resume">
-<div class="card" style="margin-bottom:16px">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px">
-<h3 style="font-size:16px;font-weight:600;margin:0">📄 我的简历</h3>
-<div style="display:flex;gap:8px;flex-wrap:wrap">
-<button class="btn btn-secondary btn-sm" onclick="addResumeVersion()">➕ 新版本</button>
-<button class="btn btn-secondary btn-sm" onclick="renameResumeVersion()">✏️ 重命名</button>
-<button class="btn btn-secondary btn-sm" onclick="deleteResumeVersion()">🗑️ 删除</button>
-<button class="btn btn-primary btn-sm" onclick="copyResumeAll()">📋 复制全部</button>
-</div>
-</div>
-<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="resumeVersionTabs"></div>
-<div style="font-size:12px;color:#64748b;margin-bottom:8px">💡 提示：不同岗位可以准备不同版本的简历，点击版本标签切换</div>
-</div>
-
-<div class="card" style="margin-bottom:16px">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;cursor:pointer" onclick="toggleResumeCheck()">
-<h3 style="font-size:16px;font-weight:600;margin:0">🔍 简历体检 <span style="font-size:12px;color:#64748b;font-weight:400">粘贴岗位JD，分析匹配度并生成优化建议</span></h3>
-<span id="resumeCheckArrow" style="font-size:14px;color:#64748b">▼</span>
-</div>
-<div id="resumeCheckPanel" style="display:none">
-<div style="margin-bottom:12px">
-<label style="font-size:13px;font-weight:500;color:#334155;margin-bottom:4px;display:block">📋 粘贴目标岗位JD（职位描述）</label>
-<textarea id="jdInput" rows="6" style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;resize:vertical;font-family:inherit" placeholder="粘贴岗位要求、职责描述等内容，越详细匹配越准确..."></textarea>
-</div>
-<div style="display:flex;gap:8px;margin-bottom:12px">
-<button class="btn btn-primary btn-sm" onclick="runResumeCheck()">🔬 开始体检</button>
-<button class="btn btn-secondary btn-sm" onclick="clearResumeCheck()">🗑️ 清空</button>
-</div>
-<div id="resumeCheckResult"></div>
-</div>
-</div>
-
+<div class="card" style="margin-bottom:16px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;flex-wrap:wrap;gap:8px"><h3 style="font-size:16px;font-weight:600;margin:0">📄 我的简历</h3><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn btn-secondary btn-sm" onclick="addResumeVersion()">➕ 新版本</button><button class="btn btn-secondary btn-sm" onclick="renameResumeVersion()">✏️ 重命名</button><button class="btn btn-secondary btn-sm" onclick="deleteResumeVersion()">🗑️ 删除</button><button class="btn btn-primary btn-sm" onclick="copyResumeAll()">📋 复制全部</button></div></div><div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:12px" id="resumeVersionTabs"></div><div style="font-size:12px;color:#64748b;margin-bottom:8px">💡 提示：不同岗位可以准备不同版本的简历，点击版本标签切换</div></div>
+<div class="card" style="margin-bottom:16px"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;cursor:pointer" onclick="toggleResumeCheck()"><h3 style="font-size:16px;font-weight:600;margin:0">🔍 简历体检 <span style="font-size:12px;color:#64748b;font-weight:400">粘贴岗位JD，分析匹配度并生成优化建议</span></h3><span id="resumeCheckArrow" style="font-size:14px;color:#64748b">▼</span></div><div id="resumeCheckPanel" style="display:none"><div style="margin-bottom:12px"><label style="font-size:13px;font-weight:500;color:#334155;margin-bottom:4px;display:block">📋 粘贴目标岗位JD（职位描述）</label><textarea id="jdInput" rows="6" style="width:100%;padding:10px;border:1px solid #e2e8f0;border-radius:8px;font-size:13px;resize:vertical;font-family:inherit" placeholder="粘贴岗位要求、职责描述等内容，越详细匹配越准确..."></textarea></div><div style="display:flex;gap:8px;margin-bottom:12px"><button class="btn btn-primary btn-sm" onclick="runResumeCheck()">🔬 开始体检</button><button class="btn btn-secondary btn-sm" onclick="clearResumeCheck()">🗑️ 清空</button></div><div id="resumeCheckResult"></div></div></div>
 <div id="resumeSections"></div>
 </div>
 
-<!-- 目标公司页 -->
-<div class="page" id="page-targets">
-<div class="card">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-<div style="font-size:14px;color:#64748b">列出心仪公司，按冲刺/稳妥/保底分类</div>
-<button class="btn btn-primary btn-sm" onclick="openTargetModal()">➕ 添加公司</button>
-</div>
-<div id="targetList"></div>
-</div>
-</div>
-
-<!-- 投递追踪页 -->
-<div class="page" id="page-deliveries">
-<div class="card">
-<div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px">
-<div style="display:flex;gap:8px;flex-wrap:wrap" id="deliveryFilterBtns">
-<button class="btn btn-secondary btn-sm filter-btn active" data-filter="all">全部</button>
-<button class="btn btn-secondary btn-sm filter-btn" data-filter="已投递">已投递</button>
-<button class="btn btn-secondary btn-sm filter-btn" data-filter="简历筛选中">简历筛选</button>
-<button class="btn btn-secondary btn-sm filter-btn" data-filter="笔试中">笔试中</button>
-<button class="btn btn-secondary btn-sm filter-btn" data-filter="面试中">面试中</button>
-<button class="btn btn-secondary btn-sm filter-btn" data-filter="Offer">Offer</button>
-<button class="btn btn-secondary btn-sm filter-btn" data-filter="已签约">已签约</button>
-<button class="btn btn-secondary btn-sm filter-btn" data-filter="已拒绝">已拒绝</button>
-</div>
-<div style="display:flex;gap:8px">
-<button class="btn btn-secondary btn-sm" onclick="exportDeliveries()">📥 导出Excel</button>
-<button class="btn btn-primary btn-sm" onclick="openDeliveryModal()">➕ 新增投递</button>
-</div>
-</div>
-<div class="search-box" style="margin-bottom:12px"><input type="text" id="deliverySearch" placeholder="搜索公司或岗位..." oninput="renderDeliveries()"></div>
-<div id="deliveryList"></div>
-</div>
+<div class="page" id="page-targets"><div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div style="font-size:14px;color:#64748b">列出心仪公司，按冲刺/稳妥/保底分类</div><button class="btn btn-primary btn-sm" onclick="openTargetModal()">➕ 添加公司</button></div><div id="targetList"></div></div></div>
+<div class="page" id="page-deliveries"><div class="card"><div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;margin-bottom:16px"><div style="display:flex;gap:8px;flex-wrap:wrap" id="deliveryFilterBtns"><button class="btn btn-secondary btn-sm filter-btn active" data-filter="all">全部</button><button class="btn btn-secondary btn-sm filter-btn" data-filter="已投递">已投递</button><button class="btn btn-secondary btn-sm filter-btn" data-filter="简历筛选中">简历筛选</button><button class="btn btn-secondary btn-sm filter-btn" data-filter="笔试中">笔试中</button><button class="btn btn-secondary btn-sm filter-btn" data-filter="面试中">面试中</button><button class="btn btn-secondary btn-sm filter-btn" data-filter="Offer">Offer</button><button class="btn btn-secondary btn-sm filter-btn" data-filter="已签约">已签约</button><button class="btn btn-secondary btn-sm filter-btn" data-filter="已拒绝">已拒绝</button></div><div style="display:flex;gap:8px"><button class="btn btn-secondary btn-sm" onclick="exportDeliveries()">📥 导出Excel</button><button class="btn btn-primary btn-sm" onclick="openDeliveryModal()">➕ 新增投递</button></div></div><div class="search-box" style="margin-bottom:12px"><input type="text" id="deliverySearch" placeholder="搜索公司或岗位..." oninput="renderDeliveries()"></div><div id="deliveryList"></div></div></div>
+<div class="page" id="page-interviews"><div class="card"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px"><div style="font-size:14px;color:#64748b">模板化复盘，记录每一次面试</div><button class="btn btn-primary btn-sm" onclick="openInterviewModal()">➕ 新增复盘</button></div><div id="interviewList"></div></div></div>
+<div class="page" id="page-dashboard"><div id="dashboardContent"></div></div>
+<div class="page" id="page-reminders"><div class="card"><h3 style="font-size:15px;font-weight:600;margin:0 0 16px">🔔 待办事项</h3><div id="reminderList"></div></div><div class="card"><h3 style="font-size:15px;font-weight:600;margin:0 0 16px">📅 秋招关键时间节点</h3><div class="timeline"><div class="timeline-item"><div style="font-weight:600">7-8月：秋招提前批</div><div style="font-size:13px;color:#64748b">互联网大厂、科技公司提前批开启，竞争相对较小</div></div><div class="timeline-item current"><div style="font-weight:600">9-11月：秋招正式批</div><div style="font-size:13px;color:#64748b">黄金招聘期，金九银十，密集投递</div></div><div class="timeline-item"><div style="font-weight:600">12-2月：秋招补录/寒假实习</div><div style="font-size:13px;color:#64748b">部分企业补招，寒假实习可积累经验</div></div><div class="timeline-item"><div style="font-weight:600">3-4月：春招</div><div style="font-size:13px;color:#64748b">秋招失利同学的最后机会</div></div><div class="timeline-item"><div style="font-weight:600">5-6月：暑期实习</div><div style="font-size:13px;color:#64748b">大三/研二同学的关键实习期，表现好可获转正</div></div></div></div></div>
+<div class="page" id="page-examples"><div class="card"><h3 style="font-size:16px;font-weight:600;margin-bottom:16px">📝 填写示例</h3><div style="line-height:1.8;font-size:14px;color:#334155"><p><strong>目标公司示例：</strong></p><ul><li><strong>冲刺</strong>：字节跳动 - 后端开发工程师 - 已投递 - 内推码xxx</li><li><strong>稳妥</strong>：比亚迪 - 机械设计工程师 - 面试中 - 已过笔试</li><li><strong>保底</strong>：某地方国企 - 设备工程师 - 未投递 - 10月截止</li></ul><p><strong>投递追踪示例：</strong></p><ul><li>公司：腾讯 | 岗位：后端开发 | 投递时间：2026-09-01 | 状态：笔试中 | 下一节点：2026-09-10笔试 | 行业：互联网 | 地点：深圳 | 备注：内推投递</li></ul><p><strong>面试复盘示例：</strong></p><ul><li>公司：某新能源车企 | 岗位：机械设计 | 时间：2026-09-05 | 轮次：二面 | 形式：视频</li><li>被问：1.介绍一个你最熟悉的项目 2.公差配合怎么选 3.为什么选择我们公司</li><li>答得好：项目介绍清晰，有数据支撑</li><li>待改进：公差配合的具体选型逻辑答得不够深入</li><li>改进：复习GB/T 1800.1，整理常用公差配合选型表</li></ul></div></div></div>
+<div class="page" id="page-guide"><div class="card"><h3 style="font-size:16px;font-weight:600;margin-bottom:16px">📖 使用说明</h3><div style="line-height:1.8;font-size:14px;color:#334155"><p><strong>🏠 校招广场</strong>：浏览4900+条校招/实习岗位，支持按批次、地点、行业、企业性质、笔试要求筛选，点击岗位卡片查看详情。</p><p><strong>🔗 平台导航</strong>：汇总官方招聘平台、央企、地方社保局、综合招聘平台链接，点击直接跳转。</p><p><strong>🎓 专业参考</strong>：93个专业类的就业方向、薪资范围、前景星级，选专业/转行参考。</p><p><strong>📄 我的简历</strong>：简历模板，分模块复制，填入个人信息后可直接复制投递。</p><p><strong>🎯 目标公司</strong>：列出心仪公司，按冲刺/稳妥/保底分类，制定投递计划。</p><p><strong>📮 投递追踪</strong>：每投一家记录一条，状态实时更新，支持导出Excel。</p><p><strong>🎤 面试复盘</strong>：模板化记录每次面试的问题和改进方向。</p><p><strong>📊 统计仪表盘</strong>：投递数据可视化，漏斗图展示各阶段转化率。</p><p><strong>⏰ 节点提醒</strong>：自动汇总投递截止和面试时间，避免错过。</p><p><strong>💾 数据管理</strong>：所有数据存在浏览器本地，支持导出JSON备份和导入恢复。</p><p style="margin-top:16px;padding:12px;background:#fef3c7;border-radius:8px"><strong>💡 小贴士</strong>：定期在「数据管理」页导出备份，换电脑或清理浏览器前务必备份！</p></div></div></div>
+<div class="page" id="page-settings"><div class="card"><h3 style="font-size:16px;font-weight:600;margin-bottom:16px">⚙️ 数据管理</h3><p style="font-size:13px;color:#64748b;margin-bottom:16px">所有数据存储在浏览器本地（localStorage），建议定期导出备份。</p><div style="display:flex;gap:12px;flex-wrap:wrap"><button class="btn btn-primary" onclick="exportAllData()">📤 导出全部数据（JSON）</button><button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📥 导入数据</button><input type="file" id="importFile" accept=".json" style="display:none" onchange="importAllData(event)"><button class="btn btn-danger" style="background:#fee2e2;color:#dc2626" onclick="clearAllData()">🗑️ 清空所有数据</button></div><div style="margin-top:20px;padding:16px;background:#f8fafc;border-radius:8px"><div style="font-size:13px;font-weight:600;margin-bottom:8px">📊 数据统计</div><div id="dataStats" style="font-size:13px;color:#64748b;line-height:1.8"></div></div></div></div>
 </div>
 
-<!-- 面试复盘页 -->
-<div class="page" id="page-interviews">
-<div class="card">
-<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px">
-<div style="font-size:14px;color:#64748b">模板化复盘，记录每一次面试</div>
-<button class="btn btn-primary btn-sm" onclick="openInterviewModal()">➕ 新增复盘</button>
-</div>
-<div id="interviewList"></div>
-</div>
-</div>
+<div class="modal-overlay" id="deliveryModal"><div class="modal"><div class="modal-title"><span id="deliveryModalTitle">新增投递</span><button onclick="closeModal('deliveryModal')" style="background:none;border:none;font-size:20px;cursor:pointer">×</button></div><div class="form-row"><div class="form-group"><label>公司名称 *</label><input type="text" id="d_company"></div><div class="form-group"><label>岗位名称 *</label><input type="text" id="d_position"></div></div><div class="form-row"><div class="form-group"><label>投递时间</label><input type="date" id="d_date"></div><div class="form-group"><label>状态</label><select id="d_status"><option>已投递</option><option>简历筛选中</option><option>笔试中</option><option>面试中</option><option>Offer</option><option>已签约</option><option>已拒绝</option></select></div></div><div class="form-row"><div class="form-group"><label>下一节点日期</label><input type="date" id="d_nextDate"></div><div class="form-group"><label>行业</label><input type="text" id="d_industry"></div></div><div class="form-row"><div class="form-group"><label>工作地点</label><input type="text" id="d_location"></div><div class="form-group"><label>薪资范围</label><input type="text" id="d_salary"></div></div><div class="form-group"><label>备注</label><textarea id="d_note" rows="2"></textarea></div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px"><button class="btn btn-secondary" onclick="closeModal('deliveryModal')">取消</button><button class="btn btn-primary" onclick="saveDelivery()">保存</button></div></div></div>
 
-<!-- 统计仪表盘页 -->
-<div class="page" id="page-dashboard">
-<div id="dashboardContent"></div>
-</div>
+<div class="modal-overlay" id="interviewModal"><div class="modal"><div class="modal-title"><span id="interviewModalTitle">新增面试复盘</span><button onclick="closeModal('interviewModal')" style="background:none;border:none;font-size:20px;cursor:pointer">×</button></div><div class="form-row"><div class="form-group"><label>公司名称 *</label><input type="text" id="i_company"></div><div class="form-group"><label>岗位名称</label><input type="text" id="i_position"></div></div><div class="form-row"><div class="form-group"><label>面试时间</label><input type="date" id="i_date"></div><div class="form-group"><label>面试轮次</label><select id="i_round"><option>一面</option><option>二面</option><option>三面</option><option>终面</option><option>HR面</option></select></div></div><div class="form-row"><div class="form-group"><label>面试形式</label><select id="i_type"><option>现场</option><option>视频</option><option>电话</option><option>群面</option></select></div><div class="form-group"><label>面试结果</label><select id="i_result"><option>待结果</option><option>通过</option><option>未通过</option></select></div></div><div class="form-group"><label>被问到的问题（每行一个）</label><textarea id="i_questions" rows="3"></textarea></div><div class="form-group"><label>答得好的地方</label><textarea id="i_good" rows="2"></textarea></div><div class="form-group"><label>答得不好的地方</label><textarea id="i_bad" rows="2"></textarea></div><div class="form-group"><label>改进方向</label><textarea id="i_improve" rows="2"></textarea></div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px"><button class="btn btn-secondary" onclick="closeModal('interviewModal')">取消</button><button class="btn btn-primary" onclick="saveInterview()">保存</button></div></div></div>
 
-<!-- 节点提醒页 -->
-<div class="page" id="page-reminders">
-<div class="card"><h3 style="font-size:15px;font-weight:600;margin:0 0 16px">🔔 待办事项</h3><div id="reminderList"></div></div>
-<div class="card"><h3 style="font-size:15px;font-weight:600;margin:0 0 16px">📅 秋招关键时间节点</h3>
-<div class="timeline">
-<div class="timeline-item"><div style="font-weight:600">7-8月：秋招提前批</div><div style="font-size:13px;color:#64748b">互联网大厂、科技公司提前批开启，竞争相对较小</div></div>
-<div class="timeline-item current"><div style="font-weight:600">9-11月：秋招正式批</div><div style="font-size:13px;color:#64748b">黄金招聘期，金九银十，密集投递</div></div>
-<div class="timeline-item"><div style="font-weight:600">12-2月：秋招补录/寒假实习</div><div style="font-size:13px;color:#64748b">部分企业补招，寒假实习可积累经验</div></div>
-<div class="timeline-item"><div style="font-weight:600">3-4月：春招</div><div style="font-size:13px;color:#64748b">秋招失利同学的最后机会</div></div>
-<div class="timeline-item"><div style="font-weight:600">5-6月：暑期实习</div><div style="font-size:13px;color:#64748b">大三/研二同学的关键实习期，表现好可获转正</div></div>
-</div></div>
-</div>
-
-<!-- 填写示例页 -->
-<div class="page" id="page-examples">
-<div class="card">
-<h3 style="font-size:16px;font-weight:600;margin-bottom:16px">📝 填写示例</h3>
-<div style="line-height:1.8;font-size:14px;color:#334155">
-<p><strong>目标公司示例：</strong></p>
-<ul>
-<li><strong>冲刺</strong>：字节跳动 - 后端开发工程师 - 已投递 - 内推码xxx</li>
-<li><strong>稳妥</strong>：比亚迪 - 机械设计工程师 - 面试中 - 已过笔试</li>
-<li><strong>保底</strong>：某地方国企 - 设备工程师 - 未投递 - 10月截止</li>
-</ul>
-<p><strong>投递追踪示例：</strong></p>
-<ul>
-<li>公司：腾讯 | 岗位：后端开发 | 投递时间：2026-09-01 | 状态：笔试中 | 下一节点：2026-09-10笔试 | 行业：互联网 | 地点：深圳 | 备注：内推投递</li>
-</ul>
-<p><strong>面试复盘示例：</strong></p>
-<ul>
-<li>公司：某新能源车企 | 岗位：机械设计 | 时间：2026-09-05 | 轮次：二面 | 形式：视频</li>
-<li>被问：1.介绍一个你最熟悉的项目 2.公差配合怎么选 3.为什么选择我们公司</li>
-<li>答得好：项目介绍清晰，有数据支撑</li>
-<li>待改进：公差配合的具体选型逻辑答得不够深入</li>
-<li>改进：复习GB/T 1800.1，整理常用公差配合选型表</li>
-</ul>
-</div>
-</div>
-</div>
-
-<!-- 使用说明页 -->
-<div class="page" id="page-guide">
-<div class="card">
-<h3 style="font-size:16px;font-weight:600;margin-bottom:16px">📖 使用说明</h3>
-<div style="line-height:1.8;font-size:14px;color:#334155">
-<p><strong>🏠 校招广场</strong>：浏览4900+条校招/实习岗位，支持按批次、地点、行业、企业性质、笔试要求筛选，点击岗位卡片查看详情。</p>
-<p><strong>🔗 平台导航</strong>：汇总官方招聘平台、央企、地方社保局、综合招聘平台链接，点击直接跳转。</p>
-<p><strong>🎓 专业参考</strong>：93个专业类的就业方向、薪资范围、前景星级，选专业/转行参考。</p>
-<p><strong>📄 我的简历</strong>：简历模板，分模块复制，填入个人信息后可直接复制投递。</p>
-<p><strong>🎯 目标公司</strong>：列出心仪公司，按冲刺/稳妥/保底分类，制定投递计划。</p>
-<p><strong>📮 投递追踪</strong>：每投一家记录一条，状态实时更新，支持导出Excel。</p>
-<p><strong>🎤 面试复盘</strong>：模板化记录每次面试的问题和改进方向。</p>
-<p><strong>📊 统计仪表盘</strong>：投递数据可视化，漏斗图展示各阶段转化率。</p>
-<p><strong>⏰ 节点提醒</strong>：自动汇总投递截止和面试时间，避免错过。</p>
-<p><strong>💾 数据管理</strong>：所有数据存在浏览器本地，支持导出JSON备份和导入恢复。</p>
-<p style="margin-top:16px;padding:12px;background:#fef3c7;border-radius:8px"><strong>💡 小贴士</strong>：定期在「数据管理」页导出备份，换电脑或清理浏览器前务必备份！</p>
-</div>
-</div>
-</div>
-
-<!-- 数据管理页 -->
-<div class="page" id="page-settings">
-<div class="card">
-<h3 style="font-size:16px;font-weight:600;margin-bottom:16px">⚙️ 数据管理</h3>
-<p style="font-size:13px;color:#64748b;margin-bottom:16px">所有数据存储在浏览器本地（localStorage），建议定期导出备份。</p>
-<div style="display:flex;gap:12px;flex-wrap:wrap">
-<button class="btn btn-primary" onclick="exportAllData()">📤 导出全部数据（JSON）</button>
-<button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📥 导入数据</button>
-<input type="file" id="importFile" accept=".json" style="display:none" onchange="importAllData(event)">
-<button class="btn btn-danger" style="background:#fee2e2;color:#dc2626" onclick="clearAllData()">🗑️ 清空所有数据</button>
-</div>
-<div style="margin-top:20px;padding:16px;background:#f8fafc;border-radius:8px">
-<div style="font-size:13px;font-weight:600;margin-bottom:8px">📊 数据统计</div>
-<div id="dataStats" style="font-size:13px;color:#64748b;line-height:1.8"></div>
-</div>
-</div>
-</div>
-
-</div>
-
-<!-- 弹窗容器 -->
-<div class="modal-overlay" id="deliveryModal"><div class="modal">
-<div class="modal-title"><span id="deliveryModalTitle">新增投递</span><button onclick="closeModal('deliveryModal')" style="background:none;border:none;font-size:20px;cursor:pointer">×</button></div>
-<div class="form-row">
-<div class="form-group"><label>公司名称 *</label><input type="text" id="d_company"></div>
-<div class="form-group"><label>岗位名称 *</label><input type="text" id="d_position"></div>
-</div>
-<div class="form-row">
-<div class="form-group"><label>投递时间</label><input type="date" id="d_date"></div>
-<div class="form-group"><label>状态</label><select id="d_status"><option>已投递</option><option>简历筛选中</option><option>笔试中</option><option>面试中</option><option>Offer</option><option>已签约</option><option>已拒绝</option></select></div>
-</div>
-<div class="form-row">
-<div class="form-group"><label>下一节点日期</label><input type="date" id="d_nextDate"></div>
-<div class="form-group"><label>行业</label><input type="text" id="d_industry"></div>
-</div>
-<div class="form-row">
-<div class="form-group"><label>工作地点</label><input type="text" id="d_location"></div>
-<div class="form-group"><label>薪资范围</label><input type="text" id="d_salary"></div>
-</div>
-<div class="form-group"><label>备注</label><textarea id="d_note" rows="2"></textarea></div>
-<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px"><button class="btn btn-secondary" onclick="closeModal('deliveryModal')">取消</button><button class="btn btn-primary" onclick="saveDelivery()">保存</button></div>
-</div></div>
-
-<div class="modal-overlay" id="interviewModal"><div class="modal">
-<div class="modal-title"><span id="interviewModalTitle">新增面试复盘</span><button onclick="closeModal('interviewModal')" style="background:none;border:none;font-size:20px;cursor:pointer">×</button></div>
-<div class="form-row">
-<div class="form-group"><label>公司名称 *</label><input type="text" id="i_company"></div>
-<div class="form-group"><label>岗位名称</label><input type="text" id="i_position"></div>
-</div>
-<div class="form-row">
-<div class="form-group"><label>面试时间</label><input type="date" id="i_date"></div>
-<div class="form-group"><label>面试轮次</label><select id="i_round"><option>一面</option><option>二面</option><option>三面</option><option>终面</option><option>HR面</option></select></div>
-</div>
-<div class="form-row">
-<div class="form-group"><label>面试形式</label><select id="i_type"><option>现场</option><option>视频</option><option>电话</option><option>群面</option></select></div>
-<div class="form-group"><label>面试结果</label><select id="i_result"><option>待结果</option><option>通过</option><option>未通过</option></select></div>
-</div>
-<div class="form-group"><label>被问到的问题（每行一个）</label><textarea id="i_questions" rows="3"></textarea></div>
-<div class="form-group"><label>答得好的地方</label><textarea id="i_good" rows="2"></textarea></div>
-<div class="form-group"><label>答得不好的地方</label><textarea id="i_bad" rows="2"></textarea></div>
-<div class="form-group"><label>改进方向</label><textarea id="i_improve" rows="2"></textarea></div>
-<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px"><button class="btn btn-secondary" onclick="closeModal('interviewModal')">取消</button><button class="btn btn-primary" onclick="saveInterview()">保存</button></div>
-</div></div>
-
-<div class="modal-overlay" id="targetModal"><div class="modal">
-<div class="modal-title"><span id="targetModalTitle">添加目标公司</span><button onclick="closeModal('targetModal')" style="background:none;border:none;font-size:20px;cursor:pointer">×</button></div>
-<div class="form-row">
-<div class="form-group"><label>公司名称 *</label><input type="text" id="t_company"></div>
-<div class="form-group"><label>优先级</label><select id="t_priority"><option>冲刺</option><option>稳妥</option><option>保底</option></select></div>
-</div>
-<div class="form-row">
-<div class="form-group"><label>意向岗位</label><input type="text" id="t_position"></div>
-<div class="form-group"><label>投递状态</label><select id="t_status"><option>未投递</option><option>已投递</option><option>面试中</option><option>已Offer</option><option>已拒绝</option></select></div>
-</div>
-<div class="form-group"><label>备注</label><textarea id="t_note" rows="2"></textarea></div>
-<div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px"><button class="btn btn-secondary" onclick="closeModal('targetModal')">取消</button><button class="btn btn-primary" onclick="saveTarget()">保存</button></div>
-</div></div>
+<div class="modal-overlay" id="targetModal"><div class="modal"><div class="modal-title"><span id="targetModalTitle">添加目标公司</span><button onclick="closeModal('targetModal')" style="background:none;border:none;font-size:20px;cursor:pointer">×</button></div><div class="form-row"><div class="form-group"><label>公司名称 *</label><input type="text" id="t_company"></div><div class="form-group"><label>优先级</label><select id="t_priority"><option>冲刺</option><option>稳妥</option><option>保底</option></select></div></div><div class="form-row"><div class="form-group"><label>意向岗位</label><input type="text" id="t_position"></div><div class="form-group"><label>投递状态</label><select id="t_status"><option>未投递</option><option>已投递</option><option>面试中</option><option>已Offer</option><option>已拒绝</option></select></div></div><div class="form-group"><label>备注</label><textarea id="t_note" rows="2"></textarea></div><div style="display:flex;justify-content:flex-end;gap:8px;margin-top:16px"><button class="btn btn-secondary" onclick="closeModal('targetModal')">取消</button><button class="btn btn-primary" onclick="saveTarget()">保存</button></div></div></div>
 
 <script src="app.js"></script>
 </body>
