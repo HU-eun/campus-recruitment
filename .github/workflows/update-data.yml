@@ -5,6 +5,9 @@ on:
     - cron: '0 2 * * *'  # 每天北京时间10点（UTC 2点）自动运行
   workflow_dispatch:  # 允许手动触发
 
+permissions:
+  contents: write  # 允许推送更新后的数据
+
 jobs:
   update-data:
     runs-on: ubuntu-latest
